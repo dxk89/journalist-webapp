@@ -4,4 +4,4 @@ selenium
 webdriver-manager
 requests
 beautifulsoup4
-gunicorn
+gunicorn==23.0.0
