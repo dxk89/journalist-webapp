@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Journalist Bot v4.5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #d1d5db; }
+        .container { max-width: 1200px; margin: auto; padding: 2rem; }
+        .form-input, .form-textarea, .form-select {
+            background-color: #374151; border: 1px solid #4b5563; border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem; width: 100%; color: #d1d5db;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+        .btn {
+            background-color: #2563eb; color: white; font-weight: 600; padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; border: none; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn:hover:not(:disabled) { background-color: #1d4ed8; }
+        .btn:disabled { background-color: #4b5563; cursor: not-allowed; }
+        .btn-secondary { background-color: #4b5563; }
+        .btn-secondary:hover { background-color: #374151; }
+        .log-panel {
+            background-color: #1f2937; border-radius: 0.5rem; padding: 1rem;
+            height: 250px; overflow-y: auto; font-family: monospace; font-size: 0.875rem;
+            white-space: pre-wrap;
+        }
+        .label { display: block; margin-bottom: 0.25rem; font-weight: 500; color: #9ca3af; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white">AI Journalist Bot</h1>
+            <p class="text-xl text-gray-400">v4.5 (Batch Processing)</p>
+        </header>
+
+        <main>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <div id="config-section" class="bg-gray-800 p-6 rounded-lg mb-6">
+                        <h2 class="text-2xl font-semibold text-white mb-4">Configuration</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="ai_model" class="label">AI Model</label>
+                                <select id="ai_model" class="form-select">
+                                    <option value="gemini" selected>Google Gemini (gemini-1.5-flash)</option>
+                                    <option value="openai">OpenAI (gpt-4o)</option>
+                                </select>
+                            </div>
+                            <div id="gemini-key-div">
+                                <label for="gemini_api_key" class="label">Gemini API Key</label>
+                                <input type="password" id="gemini_api_key" class="form-input">
+                            </div>
+                            <div id="openai-key-div" class="hidden">
+                                <label for="openai_api_key" class="label">OpenAI (ChatGPT) API Key</label>
+                                <input type="password" id="openai_api_key" class="form-input">
+                            </div>
+                            <div>
+                                <label for="login_url" class="label">Login URL</label>
+                                <input type="text" id="login_url" class="form-input">
+                            </div>
+                            <div>
+                                <label for="username" class="label">Username</label>
+                                <input type="text" id="username" class="form-input">
+                            </div>
+                            <div>
+                                <label for="password" class="label">Password</label>
+                                <input type="password" id="password" class="form-input">
+                            </div>
+                            <div>
+                                <label for="add_article_url" class="label">Add Article URL</label>
+                                <input type="text" id="add_article_url" class="form-input">
+                            </div>
+                             <div>
+                                <label for="save_button_id" class="label">Save Button ID</label>
+                                <input type="text" id="save_button_id" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4 mb-8">
+                        <button id="save-settings-btn" class="btn btn-secondary w-full">Save Settings</button>
+                        <button id="load-settings-btn" class="btn btn-secondary w-full">Load Settings</button>
+                    </div>
+
+                    <div id="articles-section" class="space-y-6">
+                        </div>
+                </div>
+
+                <div class="flex flex-col">
+                     <div class="flex-grow">
+                        <h2 class="text-2xl font-semibold text-white mb-4">Bot Log</h2>
+                        <div id="log-panel" class="log-panel"></div>
+                    </div>
+                    <button id="run-bot-btn" class="btn w-full mt-6 text-lg">
+                        <span id="run-bot-btn-text">Generate & Run All Articles</span>
+                        <div id="loader" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white ml-3"></div>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const CONFIG_KEY = 'journalistBotConfig';
+        const MAX_ARTICLES = 3;
+
+        // --- Element References ---
+        const ui = {
+            runBtn: document.getElementById('run-bot-btn'),
+            runBtnText: document.getElementById('run-bot-btn-text'),
+            loader: document.getElementById('loader'),
+            logPanel: document.getElementById('log-panel'),
+            saveBtn: document.getElementById('save-settings-btn'),
+            loadBtn: document.getElementById('load-settings-btn'),
+            articlesSection: document.getElementById('articles-section'),
+            configSection: document.getElementById('config-section'),
+            // --- CHANGE START: Added references for new elements ---
+            aiModelSelect: document.getElementById('ai_model'),
+            geminiKeyDiv: document.getElementById('gemini-key-div'),
+            openaiKeyDiv: document.getElementById('openai-key-div')
+            // --- CHANGE END ---
+        };
+        
+        let allConfigIds = [];
+
+        // --- UI Generation ---
+        function createArticleInput(index) {
+            const id = index + 1;
+            return `
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-white mb-4">Article ${id}</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="source_url_${id}" class="label">Source URL</label>
+                            <input type="text" id="source_url_${id}" class="form-input">
+                        </div>
+                        <div>
+                            <label for="prompt_${id}" class="label">Prompt</label>
+                            <textarea id="prompt_${id}" class="form-textarea" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initializeUI() {
+            let articleInputsHTML = '';
+            for (let i = 0; i < MAX_ARTICLES; i++) {
+                articleInputsHTML += createArticleInput(i);
+            }
+            ui.articlesSection.innerHTML = articleInputsHTML;
+            
+            const configInputs = ui.configSection.querySelectorAll('input, select');
+            configInputs.forEach(input => allConfigIds.push(input.id));
+        }
+
+        // --- Logging ---
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            ui.logPanel.innerHTML += `<div><span class="text-gray-500">${timestamp} - </span>${message}</div>`;
+            ui.logPanel.scrollTop = ui.logPanel.scrollHeight;
+        }
+
+        // --- Save/Load Functionality ---
+        function getAllInputIds() {
+            const ids = [...allConfigIds];
+            for (let i = 1; i <= MAX_ARTICLES; i++) {
+                ids.push(`source_url_${i}`, `prompt_${i}`);
+            }
+            return ids;
+        }
+
+        function saveSettings() {
+            const settings = {};
+            getAllInputIds().forEach(id => {
+                const element = document.getElementById(id);
+                if (element) settings[id] = element.value;
+            });
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(settings));
+            logMessage('✅ Settings saved to your browser.');
+            alert('Settings saved!');
+        }
+
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if (settings) {
+                getAllInputIds().forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element && settings[id] !== undefined) {
+                        element.value = settings[id];
+                    }
+                });
+                logMessage('✅ Settings loaded from your browser.');
+                // --- CHANGE START: Trigger change event to show correct API key field on load ---
+                ui.aiModelSelect.dispatchEvent(new Event('change'));
+                // --- CHANGE END ---
+            } else {
+                logMessage('ℹ️ No saved settings found.');
+            }
+        }
+        
+        // --- Bot Control ---
+        function setBotRunning(isRunning) {
+            ui.runBtn.disabled = isRunning;
+            ui.runBtnText.textContent = isRunning ? 'Processing...' : 'Generate & Run All Articles';
+            ui.loader.classList.toggle('hidden', !isRunning);
+        }
+
+        async function runBot() {
+            setBotRunning(true);
+            logMessage('🤖 Starting full automation sequence...');
+            
+            const configData = {};
+            getAllInputIds().forEach(id => {
+                 const element = document.getElementById(id);
+                 if (element) configData[id] = element.value;
+            });
+            
+            // --- CHANGE START: Updated validation to check the correct API key ---
+            if (configData.ai_model === 'gemini' && !configData.gemini_api_key) {
+                alert('Error: Gemini API Key is missing!');
+                logMessage('🔥 Bot stopped: Missing Gemini API Key.');
+                setBotRunning(false);
+                return;
+            }
+            if (configData.ai_model === 'openai' && !configData.openai_api_key) {
+                alert('Error: OpenAI API Key is missing!');
+                logMessage('🔥 Bot stopped: Missing OpenAI API Key.');
+                setBotRunning(false);
+                return;
+            }
+            // --- CHANGE END ---
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/run-bot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(configData)
+                });
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to start bot process.');
+                }
+                logMessage('🚀 Bot process started on the server.');
+            } catch (error) {
+                logMessage(`🔥 Error starting bot: ${error.message}`);
+                setBotRunning(false);
+            }
+        }
+
+        // --- Event Source for Live Logging ---
+        function connectToLogStream() {
+            const eventSource = new EventSource('http://127.0.0.1:5000/stream-log');
+            eventSource.onmessage = function(event) {
+                logMessage(event.data);
+                if (event.data.includes('✅✅✅ Batch processing complete! ✅✅✅') || event.data.includes('🤖 Bot thread finished.')) {
+                    setBotRunning(false);
+                }
+            };
+            eventSource.onerror = function() {
+                logMessage('🔌 Connection to log stream lost. Please start app.py if it is not running.');
+                eventSource.close();
+            };
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeUI();
+            loadSettings();
+            connectToLogStream();
+            ui.saveBtn.addEventListener('click', saveSettings);
+            ui.loadBtn.addEventListener('click', loadSettings);
+            ui.runBtn.addEventListener('click', runBot);
+
+            // --- CHANGE START: Event listener to toggle API key visibility ---
+            ui.aiModelSelect.addEventListener('change', () => {
+                const selectedModel = ui.aiModelSelect.value;
+                ui.geminiKeyDiv.classList.toggle('hidden', selectedModel !== 'gemini');
+                ui.openaiKeyDiv.classList.toggle('hidden', selectedModel !== 'openai');
+            });
+            // --- CHANGE END ---
+        });
+    </script>
+</body>
+</html>
