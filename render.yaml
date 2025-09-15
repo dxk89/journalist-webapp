@@ -1,10 +1,16 @@
 services:
   - type: web
-    name: my-flask-app          # change to whatever you want your service to be called
+    # You can change this name to whatever you like
+    name: ai-journalist-bot
+    # Use the Python environment
     env: python
-    plan: free                 # or starter, standard, etc.
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    # Use the free hosting plan
+    plan: free
+    # Sets the specific Python version
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9          # optional, but keeps your Python version consistent
+        value: 3.11.9
+    # The command to install all your packages
+    buildCommand: "pip install -r requirements.txt"
+    # The command to start your app using gunicorn
+    startCommand: "gunicorn app:app"
