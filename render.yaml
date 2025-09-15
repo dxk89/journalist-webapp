@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: my-flask-app          # change to whatever you want your service to be called
+    env: python
+    plan: free                 # or starter, standard, etc.
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9          # optional, but keeps your Python version consistent
