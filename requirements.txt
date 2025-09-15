@@ -1,7 +1,7 @@
+gunicorn
 Flask
 flask_cors
 selenium
 webdriver-manager
 requests
 beautifulsoup4
-gunicorn==23.0.0
