@@ -1,4 +1,4 @@
-# AI Journalist Bot v4.10 - Web Server Backend
+# AI Journalist Bot v4.16 - Web Server Backend
 import threading
 import time
 import json
@@ -20,7 +20,6 @@ CORS(app)
 def log_message(message):
     """Prints a message with a timestamp. This will show up in Render logs."""
     timestamp = time.strftime('%H:%M:%S')
-    # Add flush=True to ensure logs appear immediately
     print(f"{timestamp} - {message}", flush=True)
 
 # --- AI Helper Functions ---
@@ -82,28 +81,147 @@ def call_openai(prompt, api_key, step_name, log_func):
         log_func(f"🔥 OpenAI API Error during {step_name}: {e}")
         return None
 
+# --- CHANGE START: Updated prompts to use Checkbox IDs for Countries as well ---
 def get_metadata_prompt(article_title, article_body):
     """Creates the detailed prompt for generating CMS metadata."""
-    publications = """Blog, Africa Blog, Asia Blog, Balkan Blog, Baltic Blog, Bucharest Blog, Caucasus Blog, Central Asia Blog, Istanbul Blog, Kyiv Blog, LatAm Blog, Minsk Blog, Moscow Blog, Tehran Blog, Video Blog, Visegrad Blog, Global Today, Africa Today, Eastern Africa, Burundi Today, Comoros Today, Djibouti Today, Eritrea Today, Ethiopia Today, Kenya Today, Madagascar Today, Malawi Today, Mauritius Today, Mayotte Today, Mozambique Today, Réunion Today, Rwanda Today, Seychelles Today, Somalia Today, Tanzania Today, Uganda Today, Zambia Today, Zimbabwe Today, Middle Africa, Angola Today, Cameroon Today, Central African Republic Today, Chad Today, Democratic Republic of the Congo Today, Equatorial Guinea Today, Gabon Today, Republic of the Congo Today, São Tomé and Príncipe Today, Northern Africa, Algeria Today, Egypt Today, Libya Today, Middle East & N.Africa Today, Morocco Today, North Africa Today, South Sudan Today, Sudan Today, Tunisia Today, Western Sahara Today, Southern Africa, Botswana Today, Eswatini Today, Lesotho Today, Namibia Today, South Africa Today, Swaziland, Western Africa, Benin Today, Burkina Faso, Cape Verde Today, Gambia Today, Ghana Today, Guinea Today, Guinea-Bissau Today, Ivory Coast Today, Liberia Today, Mali Today, Mauritania Today, Niger Today, Nigeria Today, Saint Helena, Ascension and Tristan da Cunha Today, Senegal Today, Sierra Leone Today, Togo Today, Asia Today, Bahrain, Bangladesh, Bhutan, Brunei, Cambodia, China, East Timor, Hong Kong, India, Indonesia, Japan, Laos, Macao, Malaysia, Maldives, Mynmar, Nepal Today, North Korea, Pakistan, Papua new Guinea, Philippines, Singapore, South Korea, Sri Lanka, Taiwan, Thailand, Vietnam, EU Today, Baltic States Today, Bulgaria Today, Croatia Today, Czech Republic Today, Hungary Today, Poland Today, Romania Today, Slovakia Today, Slovenia Today, Eurasia Today, Afghanistan Today, Albania Today, Armenia Today, Azerbaijan Today, Belarus Today, Bosnia and Herzegovina Today, Georgia Today, Kazakhstan Today, Kosovo Today, Kyrgyzstan Today, Moldova Today, Mongolia Today, Montenegro Today, North Macedonia Today, Russia Today, Serbia Today, Tajikistan Today, Turkey Sectors and Companies Today, Turkey Today, Turkmenistan Today, Ukraine Today, Uzbekistan Today, LatAm Today, Argentina, Belize, Bolivia, Brazil, Caribbean Islands, Chile, Colombia, Costa Rica, Cuba, Ecuador, El Salvador, French Guiana, Guatemala, Guyana, Haiti, Honduras, Mexico, Nicaragua, Panama, Paraguay, Peru, Suriname, Uruguay, Venezuela, Middle East Today, Asia Banking, Asia Credit, Asia Energy, Asia Infrastructure, Asia M&A and investment review, Asia Metals and mining, Asia Telecoms & IT, Bahrain, Iran, Iraq, Israel, Jordan, Kuwait, Lebanon, Oman, Palestine, Qatar, Saudi Arabia, Syrian Arab Republic, United Arab Emirates, Yemen, Rest of the world, USA & Canada, NewsBase, AfrElec, AfrOil, AsiaElec, AsianOil, DMEA, ENERGO, EurOil, FSUOGM, GLNG, LatAmOil, MEOG, NorthAmOil, REM, Other, Africa Credit, Africa Energy, Africa Infrastructure, African Banking Review, African M&A and Investments Review, African Mining Review, African Telecom & IT Review, Asia Banking, Asia Credit, Asia Energy, Asia Infrastructure, Asia M&A and investment review, Asia Metals and mining, Asia Telecoms & IT, bne:Banker, bne:Credit, bne:Infrastructure, Bricks & Mortar, CEE Energy News Watch, CEE Telecoms/Media/IT News Watch, Conference Call, Latam Banking, Latam Credit, Latam Energy, Latam Infrastructure, Latam M&A and investment review, Latam Metals and mining"""
-    countries = """Africa, Eastern Africa, Burundi, Comoros, Djibouti, Eritrea, Ethiopia, Kenya, Madagascar, Malawi, Mauritius, Mayotte, Mozambique, Réunion, Rwanda, Seychelles, Somalia, Tanzania, Uganda, Zambia, Zimbabwe, Middle Africa, Angola, Cameroon, Central African Republic, Chad, Congo, Congo, Democratic Republic of the, Equatorial Guinea, Gabon, Sao Tome and Principe, Northern Africa, Algeria, Egypt, Libya, Morocco, South Sudan, Sudan, Tunisia, Western Sahara, Southern Africa, Botswana, Lesotho, Namibia, South Africa, Swaziland, Western Africa, Benin, Burkina Faso, Cape Verde, Cote d'Ivoire, Gambia, Ghana, Guinea, Guinea-Bissau, Liberia, Mali, Mauritania, Niger, Nigeria, Saint Helena, Ascension and Tristan da Cunha, Senegal, Sierra Leone, Togo, Americas, Latin America and the Caribbean, Caribbean, Anguilla, Antigua and Barbuda, Aruba, Bahamas, Barbados, Bonaire, Saint Eustatius and Saba, British Virgin Islands, Cayman Islands, Cuba, Curaçao, Dominica, Dominican Republic, Grenada, Guadeloupe, Haiti, Jamaica, Martinique, Montserrat, Puerto Rico, Saint Kitts and Nevis, Saint Lucia, Saint Martin, Saint Vincent and the Grenadines, Saint-Barthélemy, Sint Maarten, Trinidad and Tobago, Turks and Caicos Islands, United States Virgin Islands, Central America, Belize, Costa Rica, El Salvador, Guatemala, Honduras, Mexico, Nicaragua, Panama, South America, Argentina, Bolivia, Brazil, Chile, Colombia, Ecuador, Falkland Islands (Malvinas), French Guiana, Guyana, Paraguay, Peru, Suriname, Uruguay, Venezuela, Northern America, Bermuda, Canada, Greenland, Saint Pierre and Miquelon, United States of America, Asia, Central Asia, Armenia, Kazakhstan, Kyrgyzstan, Tajikistan, Turkmenistan, Uzbekistan, Eastern Asia, China, Hong Kong, Macao, Japan, Korea, Democratic People's Republic of, Korea, Republic of, Mongolia, Taiwan, South-Eastern Asia, Brunei Darussalam, Cambodia, Indonesia, Lao People's Democratic Republic, Laos, Malaysia, Myanmar, Papua New Guinea, Philippines, Singapore, Thailand, Timor-Leste, Viet Nam, Southern Asia, Afghanistan, Bangladesh, Bhutan, India, Iran (Islamic Republic of), Maldives, Nepal, Pakistan, Sri Lanka, Western Asia, Armenia, Azerbaijan, Bahrain, Georgia, Iraq, Israel, Jordan, Kuwait, Lebanon, Oman, Palestinian Territory, Occupied, Qatar, Saudi Arabia, Syrian Arab Republic, Turkey, United Arab Emirates, Yemen, Europe, Eastern Europe, Belarus, Bulgaria, Cyprus, Czech Republic, Hungary, Moldova, Republic of, Poland, Romania, Russian Federation, Slovak Republic, Ukraine, Northern Europe, Aland Islands, Channel Islands, Denmark, Estonia, Faeroe Islands, Finland, Guernsey, Iceland, Ireland, Jersey, Latvia, Lithuania, Man, Isle of, Norway, Svalbard and Jan Mayen Islands, Sweden, United Kingdom, Southern Europe, Albania, Andorra, Bosnia and Herzegovina, Croatia, Gibraltar, Greece, Holy See (Vatican City State), Italy, Kosovo, Malta, Montenegro, North Macedonia, Portugal, San Marino, Serbia, Slovenia, Spain, Western Europe, Austria, Belgium, France, Germany, Liechtenstein, Luxembourg, Monaco, Netherlands, Switzerland, Oceania, Australia and New Zealand, Australia, Christmas Island, Cocos (keeling) Islands, New Zealand, Norfolk Island, Melanesia, Fiji, New Caledonia, Papua New Guinea, Solomon Islands, Vanuatu, Micronesia, Guam, Kiribati, Marshall Islands, Micronesia, Federated States of, Nauru, Northern Mariana Islands, Palau, Polynesia, American Samoa, Cook Islands, French Polynesia, Niue, Pitcairn, Samoa, Tokelau, Tonga, Tuvalu, Wallis and Futuna Islands, Unclassified, Antarctica, Bouvet Island, British Indian Ocean Territory, French Southern Territories, Heard Island and McDonald Islands, South Georgia and the South Sandwich Islands, United States Minor Outlying Islands"""
-    industries = """Energy, oil, gas & combustibles, Power, Renewables, Nuclear Utiltiies, Materials, Metals & Chemicals, Steel, Gold, Industrials, Aerospace & Defense, Automotive, Machinery, Transportation, Airlines, Consumer, Food & Staples Retailing, Banking, Finance, Capital Markets, Insurance, Real Estate, Tech, e-commerce & IT, Telecommunication Services, Cryptocurrency & Fintech, Health care & Pharmaceuticals"""
+    
+    publication_ids = """
+    "Blog": "edit-field-publication-und-0-2971-2971",
+    "Africa Blog": "edit-field-publication-und-0-2971-2971-children-3523-3523",
+    "Asia Blog": "edit-field-publication-und-0-2971-2971-children-3524-3524",
+    "Global Today": "edit-field-publication-und-0-2972-2972",
+    "Africa Today": "edit-field-publication-und-0-2972-2972-children-1008-1008",
+    "Asia Today": "edit-field-publication-und-0-2972-2972-children-3159-3159",
+    "EU Today": "edit-field-publication-und-0-2972-2972-children-2975-2975",
+    "Eurasia Today": "edit-field-publication-und-0-2972-2972-children-3280-3280",
+    "LatAm Today": "edit-field-publication-und-0-2972-2972-children-3174-3174",
+    "Middle East Today": "edit-field-publication-und-0-2972-2972-children-3310-3310",
+    "NewsBase": "edit-field-publication-und-0-2973-2973"
+    """
+
+    industry_ids = """
+    "Oil & Gas Drilling": "edit-field-industry-und-0-443-443-children-457-457-children-482-482-children-552-552",
+    "Oil & Gas Equipment & Services": "edit-field-industry-und-0-443-443-children-457-457-children-482-482-children-553-553",
+    "Integrated Oil & Gas": "edit-field-industry-und-0-443-443-children-457-457-children-483-483-children-554-554",
+    "Oil & Gas Exploration & Production": "edit-field-industry-und-0-443-443-children-457-457-children-483-483-children-555-555",
+    "Oil & Gas Refining & Marketing": "edit-field-industry-und-0-443-443-children-457-457-children-483-483-children-556-556",
+    "Oil & Gas Storage & Transportation": "edit-field-industry-und-0-443-443-children-457-457-children-483-483-children-557-557",
+    "Coal & Consumable Fuels": "edit-field-industry-und-0-443-443-children-457-457-children-483-483-children-558-558",
+    "Electric Utilities": "edit-field-industry-und-0-456-456-children-481-481-children-547-547-children-712-712",
+    "Gas Utilities": "edit-field-industry-und-0-456-456-children-481-481-children-548-548-children-713-713",
+    "Renewables": "edit-field-industry-und-0-456-456-children-481-481-children-2766-2766",
+    "Steel": "edit-field-industry-und-0-444-444-children-458-458-children-487-487-children-571-571",
+    "Gold": "edit-field-industry-und-0-444-444-children-458-458-children-487-487-children-569-569",
+    "Aerospace & Defense": "edit-field-industry-und-0-445-445-children-459-459-children-489-489-children-574-574",
+    "Automotive": "edit-field-industry-und-0-2767-2767-children-447-447-children-463-463-children-504-504",
+    "Airlines": "edit-field-industry-und-0-445-445-children-462-462-children-499-499-children-594-594",
+    "Banking": "edit-field-industry-und-0-451-451-children-473-473",
+    "Capital Markets": "edit-field-industry-und-0-531-531",
+    "Insurance": "edit-field-industry-und-0-451-451-children-475-475",
+    "Real Estate": "edit-field-industry-und-0-451-451-children-476-476",
+    "e-commerce & IT": "edit-field-industry-und-0-2768-2768",
+    "Telecommunication Services": "edit-field-industry-und-0-2768-2768-children-455-455",
+    "Cryptocurrency & Fintech": "edit-field-industry-und-0-2768-2768-children-3113-3113",
+    "Health care & Pharmaceuticals": "edit-field-industry-und-0-450-450"
+    """
+    
+    country_ids = """
+    "Africa": "edit-field-country-und-0-720-720",
+    "Eastern Africa": "edit-field-country-und-0-720-720-children-721-721",
+    "Kenya": "edit-field-country-und-0-720-720-children-721-721-children-727-727",
+    "Nigeria": "edit-field-country-und-0-720-720-children-766-766-children-779-779",
+    "South Africa": "edit-field-country-und-0-720-720-children-760-760-children-764-764",
+    "Americas": "edit-field-country-und-0-784-784",
+    "Latin America and the Caribbean": "edit-field-country-und-0-784-784-children-785-785",
+    "Brazil": "edit-field-country-und-0-784-784-children-785-785-children-824-824-children-827-827",
+    "Mexico": "edit-field-country-und-0-784-784-children-785-785-children-815-815-children-821-821",
+    "Northern America": "edit-field-country-und-0-784-784-children-839-839",
+    "United States of America": "edit-field-country-und-0-784-784-children-839-839-children-844-844",
+    "Canada": "edit-field-country-und-0-784-784-children-839-839-children-841-841",
+    "Asia": "edit-field-country-und-0-845-845",
+    "Central Asia": "edit-field-country-und-0-845-845-children-846-846",
+    "Kazakhstan": "edit-field-country-und-0-845-845-children-846-846-children-847-847",
+    "Uzbekistan": "edit-field-country-und-0-845-845-children-846-846-children-851-851",
+    "Eastern Asia": "edit-field-country-und-0-845-845-children-852-852",
+    "China": "edit-field-country-und-0-845-845-children-852-852-children-853-853",
+    "Japan": "edit-field-country-und-0-845-845-children-852-852-children-856-856",
+    "Southern Asia": "edit-field-country-und-0-845-845-children-861-861",
+    "India": "edit-field-country-und-0-845-845-children-861-861-children-865-865",
+    "Iran (Islamic Republic of)": "edit-field-country-und-0-845-845-children-861-861-children-866-866",
+    "Pakistan": "edit-field-country-und-0-845-845-children-861-861-children-869-869",
+    "Western Asia": "edit-field-country-und-0-845-845-children-883-883",
+    "Saudi Arabia": "edit-field-country-und-0-845-845-children-883-883-children-897-897",
+    "Turkey": "edit-field-country-und-0-845-845-children-883-883-children-899-899",
+    "United Arab Emirates": "edit-field-country-und-0-845-845-children-883-883-children-900-900",
+    "Europe": "edit-field-country-und-0-902-902",
+    "Eastern Europe": "edit-field-country-und-0-902-902-children-903-903",
+    "Poland": "edit-field-country-und-0-902-902-children-903-903-children-909-909",
+    "Romania": "edit-field-country-und-0-902-902-children-903-903-children-910-910",
+    "Russian Federation": "edit-field-country-und-0-902-902-children-903-903-children-911-911",
+    "Ukraine": "edit-field-country-und-0-902-902-children-903-903-children-913-913",
+    "Western Europe": "edit-field-country-und-0-902-902-children-950-950",
+    "Germany": "edit-field-country-und-0-902-902-children-950-950-children-954-954"
+    """
 
     return f"""
-    You are an expert sub-editor. Your response will be parsed by a program, so you must respond with ONLY a valid JSON object with the exact keys specified: "weekly_title_value", "website_callout_value", "social_media_callout_value", "seo_title_value", "seo_description_value", "seo_keywords_value", "daily_subject_value", "key_point_value", "country_selections_value", "industry_selections_value", "publication_selections_value", "africa_daily_section_value", "cee_news_watch_section_value", "n_africa_today_section_value", "middle_east_today_section_value", "asia_today_section_value", "latam_today_section_value".
+    You are an expert sub-editor. Your response must be ONLY a valid JSON object.
+    Based on the article, fill in the metadata using these keys: "weekly_title_value", "website_callout_value", "social_media_callout_value", "seo_title_value", "seo_description_value", "seo_keywords_value", "daily_subject_value", "key_point_value", "publication_id_selections", "industry_id_selections", "country_id_selections".
 
-    RULES:
-    - For checkbox selections (country, industry, publication), choose relevant options and separate them with a comma.
-    - If you select a sub-category (e.g., 'Germany'), you MUST ALSO include its parent regions (e.g., 'Western Europe', 'Europe').
+    RULES FOR CHECKBOX SELECTIONS (ID-BASED):
+    - The JSON response for "publication_id_selections", "industry_id_selections", and "country_id_selections" must be an ARRAY of STRINGS, where each string is the ID of a checkbox to be selected.
+    - Choose at least one publication ID.
+    - For industries, choose ONLY the IDs of the most specific sub-sections.
+    - For countries, choose the IDs for the specific country and its parent regions.
     
-    DROPDOWN OPTIONS:
+    AVAILABLE PUBLICATION IDs:
+    {{ {publication_ids} }}
+
+    AVAILABLE INDUSTRY IDs (Choose only specific sub-sections):
+    {{ {industry_ids} }}
+
+    AVAILABLE COUNTRY IDs:
+    {{ {country_ids} }}
+
+    RULES FOR DROPDOWN SELECTIONS:
     - daily_subject_value: Choose ONE from ["Macroeconomic News", "Banking And Finance", "Companies and Industries", "Political"]
-    - key_point_value: Choose ONE from ["Yes", "No"]. Select "Yes" only for major, market-moving stories.
-    - For regional sections (e.g., africa_daily_section_value), select the relevant country if the article fits. Otherwise, select "- None -".
+    - key_point_value: Choose ONE from ["Yes", "No"].
 
     ARTICLE FOR ANALYSIS:
     Article Title: "{article_title}"
     Article Body: "{article_body}"
     """
+# --- CHANGE END ---
+
+def remove_non_bmp_chars(text):
+    """Removes characters that ChromeDriver can't handle (e.g., emojis)."""
+    if not isinstance(text, str):
+        return text
+    return "".join(c for c in text if ord(c) <= 0xFFFF)
+
+def tick_checkboxes_by_id(driver, id_list, log_func):
+    """Finds and ticks checkboxes directly by their ID."""
+    if not id_list:
+        return
+    log_func(f"   - Selecting checkboxes by ID...")
+    for checkbox_id in id_list:
+        try:
+            checkbox = driver.find_element(By.ID, checkbox_id)
+            if not checkbox.is_selected():
+                driver.execute_script("arguments[0].click();", checkbox)
+                log_func(f"       - Ticked '{checkbox_id}'")
+        except Exception:
+            log_func(f"     - ⚠️ Could not find or tick checkbox with ID '{checkbox_id}'")
+
+def select_dropdown_option(driver, element_id, value, log_func, field_name):
+    """Selects an option from a dropdown by its visible text."""
+    try:
+        if value and value.lower().strip() != "- none -":
+            select_element = driver.find_element(By.ID, element_id)
+            select_obj = Select(select_element)
+            select_obj.select_by_visible_text(value)
+            log_func(f"   - Selected {field_name}: '{value}'")
+    except Exception as e:
+        log_func(f"   - ⚠️ Could not select {field_name} ('{value}'): {e}")
 
 def run_bot_logic_worker(config_data):
     """The main function that performs the browser automation."""
@@ -159,13 +277,18 @@ def run_bot_logic_worker(config_data):
     driver = None
     try:
         chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        
-        driver = webdriver.Chrome(options=chrome_options)
+        IS_RENDER = os.environ.get('RENDER', False)
+        if IS_RENDER:
+            log_func("🚀 Running in production mode (Render).")
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            driver = webdriver.Chrome(options=chrome_options)
+        else:
+            log_func("🖥️ Running in local mode for debugging.")
+            from webdriver_manager.chrome import ChromeDriverManager
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.implicitly_wait(15)
 
         log_func("Navigating to login URL...")
@@ -185,7 +308,55 @@ def run_bot_logic_worker(config_data):
             time.sleep(3)
             log_func("📝 Filling article form...")
             
-            # ... (form filling logic remains the same) ...
+            driver.find_element(By.ID, "edit-title").send_keys(remove_non_bmp_chars(article_content.get('title_value', '')))
+            driver.find_element(By.ID, "edit-field-weekly-title-und-0-value").send_keys(remove_non_bmp_chars(article_content.get('weekly_title_value', '')))
+            driver.find_element(By.ID, "edit-field-website-callout-und-0-value").send_keys(remove_non_bmp_chars(article_content.get('website_callout_value', '')))
+            driver.find_element(By.ID, "edit-field-social-media-callout-und-0-value").send_keys(remove_non_bmp_chars(article_content.get('social_media_callout_value', '')))
+            driver.find_element(By.ID, "edit-metatags-und-title-value").send_keys(remove_non_bmp_chars(article_content.get('seo_title_value', '')))
+            driver.find_element(By.ID, "edit-metatags-und-description-value").send_keys(remove_non_bmp_chars(article_content.get('seo_description_value', '')))
+            driver.find_element(By.ID, "edit-metatags-und-keywords-value").send_keys(remove_non_bmp_chars(article_content.get('seo_keywords_value', '')))
+            
+            body_content = remove_non_bmp_chars(article_content.get('body_value', ''))
+            escaped_body = json.dumps(body_content)
+            driver.execute_script(f"CKEDITOR.instances['edit-body-und-0-value'].setData({escaped_body});")
+
+            log_func("   - Expanding all collapsible sections...")
+            try:
+                expand_buttons = driver.find_elements(By.XPATH, "//div[contains(@class, 'term-reference-tree-collapsed')]//div[contains(@class, 'term-reference-tree-button')]")
+                for button in expand_buttons:
+                    driver.execute_script("arguments[0].click();", button)
+                    time.sleep(0.1)
+                log_func("   - All sections expanded.")
+            except Exception as e:
+                log_func(f"   - ⚠️ Could not expand sections: {e}")
+            
+            # --- CHANGE START: Use new ID-based function for all checkboxes ---
+            tick_checkboxes_by_id(driver, article_content.get('country_id_selections'), log_func)
+            tick_checkboxes_by_id(driver, article_content.get('publication_id_selections'), log_func)
+            tick_checkboxes_by_id(driver, article_content.get('industry_id_selections'), log_func)
+            # --- CHANGE END ---
+
+            select_dropdown_option(driver, 'edit-field-subject-und', article_content.get('daily_subject_value'), log_func, "Daily Subject")
+            select_dropdown_option(driver, 'edit-field-key-und', article_content.get('key_point_value'), log_func, "Key Point")
+            select_dropdown_option(driver, 'edit-field-africa-daily-section-und', article_content.get('africa_daily_section_value'), log_func, "Africa Daily Section")
+            select_dropdown_option(driver, 'edit-field-cee-middle-east-africa-tod-und', article_content.get('cee_news_watch_section_value'), log_func, "CEE News Watch Section")
+            select_dropdown_option(driver, 'edit-field-middle-east-n-africa-today-und', article_content.get('n_africa_today_section_value'), log_func, "N.Africa Today Section")
+            select_dropdown_option(driver, 'edit-field-middle-east-today-section-und', article_content.get('middle_east_today_section_value'), log_func, "Middle East Today Section")
+            select_dropdown_option(driver, 'edit-field-asia-today-sections-und', article_content.get('asia_today_section_value'), log_func, "Asia Today Section")
+            select_dropdown_option(driver, 'edit-field-latam-today-und', article_content.get('latam_today_section_value'), log_func, "LatAm Today Section")
+
+            save_button_id = config_data.get("save_button_id")
+            if save_button_id:
+                log_func("🚀 Clicking the final 'Save' button...")
+                driver.find_element(By.ID, save_button_id).click()
+                time.sleep(5)
+                log_func(f"✅ Article {idx + 1} submitted successfully!")
+            else:
+                log_func("⚠️ Save button ID not configured. Form filled but not saved.")
+
+            if idx < len(articles_to_post) - 1:
+                log_func(f"--- Pausing for 10 seconds before next article ---")
+                time.sleep(10)
 
         log_func("✅✅✅ Batch processing complete! ✅✅✅")
 
@@ -197,7 +368,6 @@ def run_bot_logic_worker(config_data):
         log_func("🤖 Bot thread finished.")
 
 # --- Flask Routes ---
-
 @app.route('/')
 def index():
     return render_template('index.html')
