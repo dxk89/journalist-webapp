@@ -1,16 +1,11 @@
 services:
   - type: web
-    # You can change this name to whatever you like
     name: ai-journalist-bot
-    # Use the Python environment
     env: python
-    # Use the free hosting plan
     plan: free
-    # Sets the specific Python version
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-    # The command to install all your packages
     buildCommand: "pip install -r requirements.txt"
-    # The command to start your app using gunicorn
-    startCommand: "gunicorn app:app"
+    # This line is updated to add the timeout and new worker class
+    startCommand: "gunicorn --worker-class gevent --timeout 120 app:app"
