@@ -1,4 +1,4 @@
-# AI Journalist Bot v4.5 - Web Server Backend
+# AI Journalist Bot v4.6 - Web Server Backend
 import threading
 import time
 import json
@@ -9,18 +9,17 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import Select
-from webdriver_manager.chrome import ChromeDriverManager
+# We no longer need webdriver-manager
 import requests
 from bs4 import BeautifulSoup
-import os # Import the os module
+import os
 
 # --- Flask App Setup ---
 app = Flask(__name__)
 CORS(app)
-log_queue = queue.Queue() # A queue to hold log messages for the web UI
+log_queue = queue.Queue()
 
-# --- AI Helper Functions ---
-
+# ... (call_gemini, call_openai, get_metadata_prompt, and other functions remain the same) ...
 def fetch_url_content(url, log_func):
     """Scrapes the text content from a given URL."""
     if not url or not url.startswith('http'):
@@ -46,7 +45,6 @@ def call_gemini(prompt, api_key, step_name, log_func):
         response = requests.post(api_url, json=payload, timeout=120)
         response.raise_for_status()
         text_response = response.json()['candidates'][0]['content']['parts'][0]['text']
-
         start_index = text_response.find('{')
         end_index = text_response.rfind('}')
         if start_index != -1 and end_index != -1 and end_index > start_index:
@@ -57,7 +55,6 @@ def call_gemini(prompt, api_key, step_name, log_func):
             log_func(f"🔥 Gemini API Error during {step_name}: Could not find a valid JSON object in the response.")
             log_func(f"   - Raw response: {text_response}")
             return None
-
     except Exception as e:
         log_func(f"🔥 Gemini API Error during {step_name}: {e}")
         if 'response' in locals() and hasattr(response, 'text'):
@@ -125,22 +122,16 @@ def get_metadata_prompt(article_title, article_body):
     Article Body: "{article_body}"
     """
 
-# --- Bot Worker Logic ---
-
 def remove_non_bmp_chars(text):
-    """Removes characters that ChromeDriver can't handle (e.g., emojis)."""
     if not isinstance(text, str):
         return text
     return "".join(c for c in text if ord(c) <= 0xFFFF)
 
 def tick_checkboxes(driver, container_id, comma_separated_labels, log_func):
-    """Finds and ticks checkboxes by directly clicking them with JavaScript."""
     if not container_id or not comma_separated_labels:
         return
-
     log_func(f"   - Directly selecting checkboxes in '{container_id}'...")
     labels_to_tick = [label.strip() for label in comma_separated_labels.split(',') if label.strip()]
-    
     try:
         container = driver.find_element(By.ID, container_id)
         for label_text in labels_to_tick:
@@ -158,7 +149,6 @@ def tick_checkboxes(driver, container_id, comma_separated_labels, log_func):
         log_func(f"   - ⚠️ Major error processing container '{container_id}': {e}")
 
 def select_dropdown_option(driver, element_id, value, log_func, field_name):
-    """Selects an option from a dropdown by its visible text."""
     try:
         if value and value.lower().strip() != "- none -":
             select_element = driver.find_element(By.ID, element_id)
@@ -168,12 +158,12 @@ def select_dropdown_option(driver, element_id, value, log_func, field_name):
     except Exception as e:
         log_func(f"   - ⚠️ Could not select {field_name} ('{value}'): {e}")
 
+# --- CHANGE START: Updated the main worker function ---
 def run_bot_logic_worker(config_data, log_func):
     """The main function that performs the browser automation."""
     
-    # --- PHASE 1: DATA GENERATION (NO BROWSER NEEDED) ---
+    # --- Phase 1: Data Generation ---
     log_func("🤖 Bot thread started. Phase 1: Generating all article content...")
-    
     ai_model = config_data.get('ai_model', 'gemini')
     if ai_model == 'openai':
         api_key = config_data.get('openai_api_key')
@@ -188,36 +178,27 @@ def run_bot_logic_worker(config_data, log_func):
     for i in range(1, 4):
         source_url = config_data.get(f'source_url_{i}')
         prompt = config_data.get(f'prompt_{i}')
-
         if not source_url or not prompt:
             continue
-
         log_func(f"--- Preparing Article {i} from URL: {source_url} ---")
-        
         scraped_text = fetch_url_content(source_url, log_func)
         if not scraped_text:
             log_func(f"🔥 Skipping Article {i}: Could not fetch content.")
             continue
-
         log_func("--- AI Step 1: Generating Article ---")
         article_prompt = f'You are an expert journalist. Your response will be parsed by a program, so you must respond with ONLY a valid JSON object with two keys: "title" and "body". Based on the web content below, {prompt}.\n\nWeb Content:\n---\n{scraped_text[:8000]}\n---'
         article_data = ai_call_function(article_prompt, api_key, "article generation", log_func)
-        
         if not article_data:
             log_func(f"🔥 Skipping Article {i}: Failed to generate article content.")
             continue
-        
         log_func("--- AI Step 2: Generating Metadata ---")
         article_title = article_data.get("title", "")
         article_body = article_data.get("body", "")
-        
         metadata_prompt = get_metadata_prompt(article_title, article_body)
         metadata = ai_call_function(metadata_prompt, api_key, "metadata generation", log_func)
-
         if not metadata:
             log_func(f"🔥 Skipping Article {i}: Failed to generate metadata.")
             continue
-
         final_article_data = {"title_value": article_title, "body_value": article_body, **metadata}
         articles_to_post.append(final_article_data)
         log_func(f"✅ Content for Article {i} is ready.")
@@ -227,22 +208,21 @@ def run_bot_logic_worker(config_data, log_func):
         log_func("🤖 Bot thread finished.")
         return
 
-    # --- PHASE 2: BROWSER AUTOMATION ---
-    log_func(f"✅ Phase 1 Complete. {len(articles_to_post)} article(s) ready to be posted.")
+    # --- Phase 2: Browser Automation ---
+    log_func(f"✅ Phase 1 Complete. {len(articles_to_post)} article(s) ready.")
     log_func("🚀 Phase 2: Starting browser automation...")
     driver = None
     try:
-        # --- CHANGE START: Added options for headless operation on Render ---
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920,1080")
-        # --- CHANGE END ---
         
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
+        # The buildpack adds chromedriver to the PATH, so we don't need webdriver-manager.
+        # This is the key change to prevent timeouts on startup.
+        driver = webdriver.Chrome(options=chrome_options)
         driver.implicitly_wait(15)
 
         log_func("Navigating to login URL...")
@@ -257,12 +237,11 @@ def run_bot_logic_worker(config_data, log_func):
         
         for idx, article_content in enumerate(articles_to_post):
             log_func(f"--- Posting Article {idx + 1}/{len(articles_to_post)} ---")
-            
             log_func("Navigating to the 'Add Article' page...")
             driver.get(config_data.get('add_article_url'))
             time.sleep(3)
-
             log_func("📝 Filling article form...")
+            
             # Text and Textarea Fields
             driver.find_element(By.ID, "edit-title").send_keys(remove_non_bmp_chars(article_content.get('title_value', '')))
             driver.find_element(By.ID, "edit-field-weekly-title-und-0-value").send_keys(remove_non_bmp_chars(article_content.get('weekly_title_value', '')))
@@ -312,6 +291,7 @@ def run_bot_logic_worker(config_data, log_func):
         if driver:
             driver.quit()
         log_func("🤖 Bot thread finished.")
+# --- CHANGE END ---
 
 
 # --- Flask Routes ---
@@ -350,12 +330,8 @@ def run_bot():
     return jsonify({'status': 'success', 'message': 'Bot process started.'})
 
 # --- Main Execution ---
-# --- CHANGE START: Modified this block to work with Gunicorn on Render ---
 if __name__ == '__main__':
-    # This block will only run when you execute `python app.py` on your local machine.
-    # It will not run on the Render server because Gunicorn starts the app differently.
     port = int(os.environ.get("PORT", 5000))
     print("AI Journalist Bot Server starting...")
     print(f"Open your web browser and go to http://127.0.0.1:{port}")
     app.run(host='0.0.0.0', port=port, debug=False)
-# --- CHANGE END ---
