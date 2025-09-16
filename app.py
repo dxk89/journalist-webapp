@@ -7,7 +7,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import Select
-from webdriver_manager.chrome import ChromeDriverManager # <-- DELETE THIS LINE
 import requests
 from bs4 import BeautifulSoup
 import os
@@ -333,4 +332,5 @@ if __name__ == '__main__':
     print("AI Journalist Bot Server starting...")
     print(f"Open your web browser and go to http://127.0.0.1:{port}")
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
