@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Journalist Bot v4.6</title>
+    <title>AI Journalist Bot v4.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -22,11 +22,6 @@
         .btn:disabled { background-color: #4b5563; cursor: not-allowed; }
         .btn-secondary { background-color: #4b5563; }
         .btn-secondary:hover { background-color: #374151; }
-        .log-panel {
-            background-color: #1f2937; border-radius: 0.5rem; padding: 1rem;
-            height: 250px; overflow-y: auto; font-family: monospace; font-size: 0.875rem;
-            white-space: pre-wrap;
-        }
         .label { display: block; margin-bottom: 0.25rem; font-weight: 500; color: #9ca3af; }
     </style>
 </head>
@@ -34,72 +29,69 @@
     <div class="container">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-white">AI Journalist Bot</h1>
-            <p class="text-xl text-gray-400">v4.6 (Batch Processing)</p>
+            <p class="text-xl text-gray-400">v4.9 (Batch Processing)</p>
         </header>
 
         <main>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <div id="config-section" class="bg-gray-800 p-6 rounded-lg mb-6">
-                        <h2 class="text-2xl font-semibold text-white mb-4">Configuration</h2>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="ai_model" class="label">AI Model</label>
-                                <select id="ai_model" class="form-select">
-                                    <option value="gemini" selected>Google Gemini (gemini-1.5-flash)</option>
-                                    <option value="openai">OpenAI (gpt-4o)</option>
-                                </select>
-                            </div>
-                            <div id="gemini-key-div">
-                                <label for="gemini_api_key" class="label">Gemini API Key</label>
-                                <input type="password" id="gemini_api_key" class="form-input">
-                            </div>
-                            <div id="openai-key-div" class="hidden">
-                                <label for="openai_api_key" class="label">OpenAI (ChatGPT) API Key</label>
-                                <input type="password" id="openai_api_key" class="form-input">
-                            </div>
-                            <div>
-                                <label for="login_url" class="label">Login URL</label>
-                                <input type="text" id="login_url" class="form-input">
-                            </div>
-                            <div>
-                                <label for="username" class="label">Username</label>
-                                <input type="text" id="username" class="form-input">
-                            </div>
-                            <div>
-                                <label for="password" class="label">Password</label>
-                                <input type="password" id="password" class="form-input">
-                            </div>
-                            <div>
-                                <label for="add_article_url" class="label">Add Article URL</label>
-                                <input type="text" id="add_article_url" class="form-input">
-                            </div>
-                             <div>
-                                <label for="save_button_id" class="label">Save Button ID</label>
-                                <input type="text" id="save_button_id" class="form-input">
-                            </div>
+            <div id="main-content">
+                <div id="config-section" class="bg-gray-800 p-6 rounded-lg mb-6 max-w-2xl mx-auto">
+                    <h2 class="text-2xl font-semibold text-white mb-4">Configuration</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="ai_model" class="label">AI Model</label>
+                            <select id="ai_model" class="form-select">
+                                <option value="gemini" selected>Google Gemini (gemini-1.5-flash)</option>
+                                <option value="openai">OpenAI (gpt-4o)</option>
+                            </select>
+                        </div>
+                        <div id="gemini-key-div">
+                            <label for="gemini_api_key" class="label">Gemini API Key</label>
+                            <input type="password" id="gemini_api_key" class="form-input">
+                        </div>
+                        <div id="openai-key-div" class="hidden">
+                            <label for="openai_api_key" class="label">OpenAI (ChatGPT) API Key</label>
+                            <input type="password" id="openai_api_key" class="form-input">
+                        </div>
+                        <div>
+                            <label for="login_url" class="label">Login URL</label>
+                            <input type="text" id="login_url" class="form-input">
+                        </div>
+                        <div>
+                            <label for="username" class="label">Username</label>
+                            <input type="text" id="username" class="form-input">
+                        </div>
+                        <div>
+                            <label for="password" class="label">Password</label>
+                            <input type="password" id="password" class="form-input">
+                        </div>
+                        <div>
+                            <label for="add_article_url" class="label">Add Article URL</label>
+                            <input type="text" id="add_article_url" class="form-input">
+                        </div>
+                         <div>
+                            <label for="save_button_id" class="label">Save Button ID</label>
+                            <input type="text" id="save_button_id" class="form-input">
                         </div>
                     </div>
-                    
-                    <div class="flex space-x-4 mb-8">
-                        <button id="save-settings-btn" class="btn btn-secondary w-full">Save Settings</button>
-                        <button id="load-settings-btn" class="btn btn-secondary w-full">Load Settings</button>
-                    </div>
-
-                    <div id="articles-section" class="space-y-6">
-                        </div>
+                </div>
+                
+                <div class="flex space-x-4 mb-8 max-w-2xl mx-auto">
+                    <button id="save-settings-btn" class="btn btn-secondary w-full">Save Settings</button>
+                    <button id="load-settings-btn" class="btn btn-secondary w-full">Load Settings</button>
                 </div>
 
-                <div class="flex flex-col">
-                     <div class="flex-grow">
-                        <h2 class="text-2xl font-semibold text-white mb-4">Bot Log</h2>
-                        <div id="log-panel" class="log-panel"></div>
+                <div id="articles-section" class="space-y-6 max-w-2xl mx-auto">
                     </div>
-                    <button id="run-bot-btn" class="btn w-full mt-6 text-lg">
+                
+                <div class="max-w-2xl mx-auto mt-8">
+                    <button id="run-bot-btn" class="btn w-full text-lg">
                         <span id="run-bot-btn-text">Generate & Run All Articles</span>
                         <div id="loader" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white ml-3"></div>
                     </button>
                 </div>
+                
+                <div id="status-message" class="mt-6 text-center text-lg text-green-400 font-semibold"></div>
+
             </div>
         </main>
     </div>
@@ -108,24 +100,22 @@
         const CONFIG_KEY = 'journalistBotConfig';
         const MAX_ARTICLES = 3;
 
-        // --- Element References ---
         const ui = {
             runBtn: document.getElementById('run-bot-btn'),
             runBtnText: document.getElementById('run-bot-btn-text'),
             loader: document.getElementById('loader'),
-            logPanel: document.getElementById('log-panel'),
             saveBtn: document.getElementById('save-settings-btn'),
             loadBtn: document.getElementById('load-settings-btn'),
             articlesSection: document.getElementById('articles-section'),
             configSection: document.getElementById('config-section'),
             aiModelSelect: document.getElementById('ai_model'),
             geminiKeyDiv: document.getElementById('gemini-key-div'),
-            openaiKeyDiv: document.getElementById('openai-key-div')
+            openaiKeyDiv: document.getElementById('openai-key-div'),
+            statusMessage: document.getElementById('status-message')
         };
         
         let allConfigIds = [];
 
-        // --- UI Generation ---
         function createArticleInput(index) {
             const id = index + 1;
             return `
@@ -151,19 +141,10 @@
                 articleInputsHTML += createArticleInput(i);
             }
             ui.articlesSection.innerHTML = articleInputsHTML;
-            
             const configInputs = ui.configSection.querySelectorAll('input, select');
             configInputs.forEach(input => allConfigIds.push(input.id));
         }
 
-        // --- Logging ---
-        function logMessage(message) {
-            const timestamp = new Date().toLocaleTimeString();
-            ui.logPanel.innerHTML += `<div><span class="text-gray-500">${timestamp} - </span>${message}</div>`;
-            ui.logPanel.scrollTop = ui.logPanel.scrollHeight;
-        }
-
-        // --- Save/Load Functionality ---
         function getAllInputIds() {
             const ids = [...allConfigIds];
             for (let i = 1; i <= MAX_ARTICLES; i++) {
@@ -179,7 +160,7 @@
                 if (element) settings[id] = element.value;
             });
             localStorage.setItem(CONFIG_KEY, JSON.stringify(settings));
-            logMessage('✅ Settings saved to your browser.');
+            ui.statusMessage.textContent = '✅ Settings saved to your browser.';
             alert('Settings saved!');
         }
 
@@ -192,14 +173,13 @@
                         element.value = settings[id];
                     }
                 });
-                logMessage('✅ Settings loaded from your browser.');
+                ui.statusMessage.textContent = '✅ Settings loaded from your browser.';
                 ui.aiModelSelect.dispatchEvent(new Event('change'));
             } else {
-                logMessage('ℹ️ No saved settings found.');
+                ui.statusMessage.textContent = 'ℹ️ No saved settings found.';
             }
         }
         
-        // --- Bot Control ---
         function setBotRunning(isRunning) {
             ui.runBtn.disabled = isRunning;
             ui.runBtnText.textContent = isRunning ? 'Processing...' : 'Generate & Run All Articles';
@@ -208,7 +188,7 @@
 
         async function runBot() {
             setBotRunning(true);
-            logMessage('🤖 Starting full automation sequence...');
+            ui.statusMessage.textContent = '🤖 Starting bot... Please wait.';
             
             const configData = {};
             getAllInputIds().forEach(id => {
@@ -218,21 +198,19 @@
             
             if (configData.ai_model === 'gemini' && !configData.gemini_api_key) {
                 alert('Error: Gemini API Key is missing!');
-                logMessage('🔥 Bot stopped: Missing Gemini API Key.');
+                ui.statusMessage.textContent = '🔥 Bot stopped: Missing Gemini API Key.';
                 setBotRunning(false);
                 return;
             }
             if (configData.ai_model === 'openai' && !configData.openai_api_key) {
                 alert('Error: OpenAI API Key is missing!');
-                logMessage('🔥 Bot stopped: Missing OpenAI API Key.');
+                ui.statusMessage.textContent = '🔥 Bot stopped: Missing OpenAI API Key.';
                 setBotRunning(false);
                 return;
             }
 
             try {
-                // --- CHANGE START: Using a relative URL for fetch ---
                 const response = await fetch('/run-bot', {
-                // --- CHANGE END ---
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(configData)
@@ -241,35 +219,16 @@
                 if (data.status !== 'success') {
                     throw new Error(data.message || 'Failed to start bot process.');
                 }
-                logMessage('🚀 Bot process started on the server.');
+                ui.statusMessage.textContent = `🚀 ${data.message}`;
             } catch (error) {
-                logMessage(`🔥 Error starting bot: ${error.message}`);
+                ui.statusMessage.textContent = `🔥 Error starting bot: ${error.message}`;
                 setBotRunning(false);
             }
         }
 
-        // --- Event Source for Live Logging ---
-        function connectToLogStream() {
-            // --- CHANGE START: Using a relative URL for EventSource ---
-            const eventSource = new EventSource('/stream-log');
-            // --- CHANGE END ---
-            eventSource.onmessage = function(event) {
-                logMessage(event.data);
-                if (event.data.includes('✅✅✅ Batch processing complete! ✅✅✅') || event.data.includes('🤖 Bot thread finished.')) {
-                    setBotRunning(false);
-                }
-            };
-            eventSource.onerror = function() {
-                logMessage('🔌 Connection to log stream lost. Please start app.py if it is not running.');
-                eventSource.close();
-            };
-        }
-
-        // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             initializeUI();
             loadSettings();
-            connectToLogStream();
             ui.saveBtn.addEventListener('click', saveSettings);
             ui.loadBtn.addEventListener('click', loadSettings);
             ui.runBtn.addEventListener('click', runBot);
