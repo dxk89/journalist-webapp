@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Journalist Bot v4.5</title>
+    <title>AI Journalist Bot v4.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -34,7 +34,7 @@
     <div class="container">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-white">AI Journalist Bot</h1>
-            <p class="text-xl text-gray-400">v4.5 (Batch Processing)</p>
+            <p class="text-xl text-gray-400">v4.6 (Batch Processing)</p>
         </header>
 
         <main>
@@ -118,11 +118,9 @@
             loadBtn: document.getElementById('load-settings-btn'),
             articlesSection: document.getElementById('articles-section'),
             configSection: document.getElementById('config-section'),
-            // --- CHANGE START: Added references for new elements ---
             aiModelSelect: document.getElementById('ai_model'),
             geminiKeyDiv: document.getElementById('gemini-key-div'),
             openaiKeyDiv: document.getElementById('openai-key-div')
-            // --- CHANGE END ---
         };
         
         let allConfigIds = [];
@@ -195,9 +193,7 @@
                     }
                 });
                 logMessage('✅ Settings loaded from your browser.');
-                // --- CHANGE START: Trigger change event to show correct API key field on load ---
                 ui.aiModelSelect.dispatchEvent(new Event('change'));
-                // --- CHANGE END ---
             } else {
                 logMessage('ℹ️ No saved settings found.');
             }
@@ -220,7 +216,6 @@
                  if (element) configData[id] = element.value;
             });
             
-            // --- CHANGE START: Updated validation to check the correct API key ---
             if (configData.ai_model === 'gemini' && !configData.gemini_api_key) {
                 alert('Error: Gemini API Key is missing!');
                 logMessage('🔥 Bot stopped: Missing Gemini API Key.');
@@ -233,10 +228,11 @@
                 setBotRunning(false);
                 return;
             }
-            // --- CHANGE END ---
 
             try {
-                const response = await fetch('http://127.0.0.1:5000/run-bot', {
+                // --- CHANGE START: Using a relative URL for fetch ---
+                const response = await fetch('/run-bot', {
+                // --- CHANGE END ---
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(configData)
@@ -254,7 +250,9 @@
 
         // --- Event Source for Live Logging ---
         function connectToLogStream() {
-            const eventSource = new EventSource('http://127.0.0.1:5000/stream-log');
+            // --- CHANGE START: Using a relative URL for EventSource ---
+            const eventSource = new EventSource('/stream-log');
+            // --- CHANGE END ---
             eventSource.onmessage = function(event) {
                 logMessage(event.data);
                 if (event.data.includes('✅✅✅ Batch processing complete! ✅✅✅') || event.data.includes('🤖 Bot thread finished.')) {
@@ -276,13 +274,11 @@
             ui.loadBtn.addEventListener('click', loadSettings);
             ui.runBtn.addEventListener('click', runBot);
 
-            // --- CHANGE START: Event listener to toggle API key visibility ---
             ui.aiModelSelect.addEventListener('change', () => {
                 const selectedModel = ui.aiModelSelect.value;
                 ui.geminiKeyDiv.classList.toggle('hidden', selectedModel !== 'gemini');
                 ui.openaiKeyDiv.classList.toggle('hidden', selectedModel !== 'openai');
             });
-            // --- CHANGE END ---
         });
     </script>
 </body>
