@@ -1,0 +1,16 @@
+# This is a recipe file for Render.com to automatically build and run your web app.
+services:
+  - type: web
+    name: journalist-webapp
+    env: python
+    plan: free
+    # Tells Render to install all the libraries listed in your requirements.txt
+    buildCommand: "pip install -r requirements.txt"
+    # Tells Render how to start the Flask web server using Gunicorn (a production-grade server)
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      # IMPORTANT: We will add the URL for your reasoning engine here
+      - key: FRAMEWORK_API_URL
+        sync: false

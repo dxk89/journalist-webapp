@@ -1,0 +1,7 @@
+# File: journalist_webapp/.gitignore
+
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
