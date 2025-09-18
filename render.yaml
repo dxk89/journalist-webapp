@@ -1,4 +1,4 @@
-# This is a recipe file for Render.com to automatically build and run your web app.
+This is a recipe file for Render.com to automatically build and run your web app.
 services:
   - type: web
     name: journalist-webapp
@@ -13,4 +13,5 @@ services:
         value: 3.11
       # IMPORTANT: We will add the URL for your reasoning engine here
       - key: FRAMEWORK_API_URL
+
         sync: false
